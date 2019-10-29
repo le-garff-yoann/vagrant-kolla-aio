@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 cat > /usr/lib/sysctl.d/99-site.conf <<EOF
 net.ipv4.ip_forward=1
 EOF

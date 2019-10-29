@@ -2,22 +2,12 @@
 
 # TODO: Split the file?
 
-sudo fdisk /dev/sda <<EOF
-n
-p
-2
-
-
-w
-EOF
-sudo partprobe
-
 set -e
 
 sudo yum install -y lvm2 epel-release
 
-sudo pvcreate /dev/sda2
-sudo vgcreate cinder-volumes /dev/sda2
+sudo pvcreate /dev/vdb
+sudo vgcreate cinder-volumes /dev/vdb
 
 # TODO: Create a bigger swapfile (or modify /swapfile)?
 sudo -s <<EOF
@@ -39,7 +29,7 @@ sudo pip install --ignore-installed kolla-ansible==$KOLLA_VERSION
 
 cd ~
 
-sudo mkdir -p /etc/kolla
+sudo mkdir -p /etc/kolla/
 sudo chown -R $USER:$USER /etc/kolla
 
 cp -r /usr/share/kolla-ansible/etc_examples/kolla /etc/
@@ -74,7 +64,7 @@ openstack_release: "$KOLLA_OPENSTACK_RELEASE"
 network_interface: "eth1"
 kolla_external_vip_interface: "eth0"
 kolla_internal_vip_address: "10.10.10.253"
-kolla_external_vip_address: "10.0.2.15"
+kolla_external_vip_address: "$(ip route get 1 | awk '{print $NF; exit}')"
 kolla_external_fqdn: "$KOLLA_EXTERNAL_FQDN"
 kolla_enable_tls_external: "{{ 'yes' if '$KOLLA_EXTERNAL_FQDN_CERT$KOLLA_LETSENCRYPT_EMAIL' | length else 'no' }}"
 kolla_external_fqdn_cert: "$HOME/full.pem"
@@ -82,13 +72,13 @@ kolla_enable_tls_internal: "no"
 
 enable_openstack_core: "yes"
 enable_haproxy: "yes"
-enable_barbican: "no"
 enable_cinder: "yes"
-enable_octavia: "no" # https://github.com/openstack/kolla-ansible/blob/master/ansible/roles/octavia/tasks/precheck.yml#L32
-enable_horizon_octavia: "{{ enable_octavia | bool }}"
 enable_heat: "no"
+enable_octavia: "no"
+enable_horizon_octavia: "{{ enable_octavia | bool }}"
+enable_barbican: "no"
 
-nova_compute_virt_type: "qemu"
+nova_compute_virt_type: "kvm"
 
 neutron_external_interface: "eth2"
 neutron_tenant_network_types: "vxlan"
@@ -107,6 +97,10 @@ tempest_public_network_id:
 tempest_floating_network_name:
 EOF
 
+# mkdir -p /etc/kolla/config/octavia
+    # https://dataops.ga/2018/12/octavia/
+    # https://shreddedbacon.com/post/openstack-kolla/
+
 set +e
 
 sudo kolla-ansible -i all-in-one bootstrap-servers
@@ -116,9 +110,9 @@ kolla-ansible post-deploy || exit 1
 
 sudo yum install -y centos-release-openstack-$KOLLA_OPENSTACK_RELEASE
 
-# A package must be installed for each additionnal services (e.g., python2-octaviaclient.noarch for Octavia).
 sudo yum install -y \
-    openstack-selinux python-openstackclient
+    openstack-selinux python-openstackclient \
+    python-octaviaclient python-barbicanclient
 
 set -e
 

@@ -7,7 +7,7 @@ Although Kolla-Ansible is mainly used for production deployment **this setup is 
 ## Prerequisites
 
 ```bash
-vagrant plugin install vagrant-disksize
+vagrant plugin install vagrant-libvirt
 ```
 
 ## Setup
@@ -24,8 +24,8 @@ VAGRANT_KOLLA_AIO_EXTERNAL_FQDN=mydomain.io \
 | `VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL` | ☓ | None | Enables the external TLS termination. It must be completed with the email address associated with your Let's Encrypt account |
 | `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT` | ☓ | None | Enables the external TLS termination. It must be completed with a private key and a fullchain certificate (PEM format) |
 | `VAGRANT_KOLLA_AIO_KOLLA_ANSIBLE_VERSION` | ☓ | `8.0.1` | Version of [kolla-ansible](https://pypi.org/project/kolla-ansible/) to install. |
-| `VAGRANT_KOLLA_AIO_CPUS` | ☓ | `4` | VirtualBox CPUs |
-| `VAGRANT_KOLLA_AIO_MEMORY` | ☓ | `12288` (mb) | VirtualBox RAM |
+| `VAGRANT_KOLLA_AIO_CPUS` | ☓ | `4` | CPUs |
+| `VAGRANT_KOLLA_AIO_MEMORY` | ☓ | `12288` (mb) | RAM |
 
 The *admin* password will be displayed out at the end of the setup.
 
