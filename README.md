@@ -7,7 +7,7 @@ Although Kolla-Ansible is mainly used for production deployment **this setup is 
 ## Prerequisites
 
 ```bash
-vagrant plugin install vagrant-libvirt
+vagrant plugin install vagrant-disksize
 ```
 
 ## Setup

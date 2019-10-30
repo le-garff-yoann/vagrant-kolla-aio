@@ -1,38 +1,39 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-
-raise 'vagrant-libvirt is required' unless Vagrant.has_plugin?('vagrant-libvirt')
-
 Vagrant.configure('2') do |config|
   config.vm.box = 'centos/7'
 
   config.vm.define :router do |node|
-    node.vm.network :private_network, ip: '10.100.0.2', netmask: '255.255.0.0'
+    node.vm.network :private_network, ip: '10.100.0.2', netmask: '255.255.0.0', virtualbox__intnet: 'aio_shared'
 
     node.vm.provision :shell do |sh|
       sh.path = 'router/main.sh'
     end
 
-    node.vm.provider :libvirt do |lv|
-      lv.cpus = 1
-      lv.memory = 256
+    node.vm.provider :virtualbox do |vb|
+      vb.cpus = 1
+      vb.memory = 256
+
+      vb.customize [ 'modifyvm', :id, '--nicpromisc1', 'allow-all' ]
+      vb.customize [ 'modifyvm', :id, '--nicpromisc2', 'allow-all' ]
     end
   end
 
   config.vm.define :aio do |node|
-    node.vm.network :private_network, ip: '10.10.10.254'
-    node.vm.network :private_network, ip: '10.100.0.3', netmask: '255.255.0.0'
+    node.vm.network :private_network, ip: '10.10.10.254', virtualbox__intnet: 'aio_internal'
+    node.vm.network :private_network, auto_config: false, virtualbox__intnet: 'aio_shared'
+    node.vm.network :private_network, ip: '10.100.0.3', netmask: '255.255.0.0', virtualbox__intnet: 'aio_shared'
   
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 80,   host: 80    # Horizon.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 443,  host: 443   # Horizon.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8774, host: 8774  # Nova.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 6080, host: 6080  # Nova (noVNC).
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 5000, host: 5000  # Keystone.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9292, host: 9292  # Glance.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9696, host: 9696  # Neutron.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8780, host: 8780  # Placement.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8776, host: 8776  # Cinder.
+    node.vm.network :forwarded_port, guest: 80,   host: 80    # Horizon.
+    node.vm.network :forwarded_port, guest: 443,  host: 443   # Horizon.
+    node.vm.network :forwarded_port, guest: 8774, host: 8774  # Nova.
+    node.vm.network :forwarded_port, guest: 6080, host: 6080  # Nova (noVNC).
+    node.vm.network :forwarded_port, guest: 5000, host: 5000  # Keystone.
+    node.vm.network :forwarded_port, guest: 9292, host: 9292  # Glance.
+    node.vm.network :forwarded_port, guest: 9696, host: 9696  # Neutron.
+    node.vm.network :forwarded_port, guest: 8780, host: 8780  # Placement.
+    node.vm.network :forwarded_port, guest: 8776, host: 8776  # Cinder.
   
     node.vm.provision :shell do |sh|
       sh.path = 'aio/unprivileged-main.sh'
@@ -47,13 +48,16 @@ Vagrant.configure('2') do |config|
       sh.privileged = false
     end
 
-    node.vm.provider :libvirt do |lv|
-      lv.cpus = ENV['VAGRANT_KOLLA_AIO_CPUS'] || 4
-      lv.memory = ENV['VAGRANT_KOLLA_AIO_MEMORY'] || 12288
-      
-      lv.storage :file, :size => '160GB'
+    node.vm.provider :virtualbox do |vb|
+      vb.cpus = ENV['VAGRANT_KOLLA_AIO_CPUS'] || 4
+      vb.memory = ENV['VAGRANT_KOLLA_AIO_MEMORY'] || 12288
 
-      lv.nested = true
+      vb.customize [ 'modifyvm', :id, '--nicpromisc1', 'allow-all' ]
+      vb.customize [ 'modifyvm', :id, '--nicpromisc2', 'allow-all' ]
+      vb.customize [ 'modifyvm', :id, '--nicpromisc3', 'allow-all' ]
+      vb.customize [ 'modifyvm', :id, '--nicpromisc3', 'allow-all' ]
     end
+
+    node.disksize.size = '200GB'
   end
 end

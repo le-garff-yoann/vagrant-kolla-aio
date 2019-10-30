@@ -2,12 +2,22 @@
 
 # TODO: Split the file?
 
+sudo fdisk /dev/sda <<EOF
+n
+p
+2
+
+
+w
+EOF
+sudo partprobe
+
 set -e
 
 sudo yum install -y lvm2 epel-release
 
-sudo pvcreate /dev/vdb
-sudo vgcreate cinder-volumes /dev/vdb
+sudo pvcreate /dev/sda2
+sudo vgcreate cinder-volumes /dev/sda2
 
 # TODO: Create a bigger swapfile (or modify /swapfile)?
 sudo -s <<EOF
@@ -20,7 +30,7 @@ sudo sysctl --system
 sudo yum makecache
 
 sudo yum install -y \
-    libffi-devel gcc openssl-devel \
+    libffi-devel gcc openssl-devel git \
     python-devel python-pip libselinux-python ansible
 
 sudo pip install -U pip
@@ -64,7 +74,7 @@ openstack_release: "$KOLLA_OPENSTACK_RELEASE"
 network_interface: "eth1"
 kolla_external_vip_interface: "eth0"
 kolla_internal_vip_address: "10.10.10.253"
-kolla_external_vip_address: "$(ip route get 1 | awk '{print $NF; exit}')"
+kolla_external_vip_address: "$(ip route get 1 | awk '{ print $NF; exit }')"
 kolla_external_fqdn: "$KOLLA_EXTERNAL_FQDN"
 kolla_enable_tls_external: "{{ 'yes' if '$KOLLA_EXTERNAL_FQDN_CERT$KOLLA_LETSENCRYPT_EMAIL' | length else 'no' }}"
 kolla_external_fqdn_cert: "$HOME/full.pem"
@@ -74,11 +84,11 @@ enable_openstack_core: "yes"
 enable_haproxy: "yes"
 enable_cinder: "yes"
 enable_heat: "no"
-enable_octavia: "no"
+enable_octavia: "yes"
 enable_horizon_octavia: "{{ enable_octavia | bool }}"
-enable_barbican: "no"
+enable_barbican: "yes"
 
-nova_compute_virt_type: "kvm"
+nova_compute_virt_type: "qemu"
 
 neutron_external_interface: "eth2"
 neutron_tenant_network_types: "vxlan"
@@ -97,16 +107,27 @@ tempest_public_network_id:
 tempest_floating_network_name:
 EOF
 
-# mkdir -p /etc/kolla/config/octavia
-    # https://dataops.ga/2018/12/octavia/
-    # https://shreddedbacon.com/post/openstack-kolla/
+git clone https://github.com/openstack/octavia.git \
+    -b stable/$KOLLA_OPENSTACK_RELEASE
+
+pushd octavia/
+
+octavia_keystone_password=$(grep octavia_ca /etc/kolla/passwords.yml | awk '{ print $2 }')
+
+sed -i "s/foobar/$octavia_keystone_password/g" bin/create_certificates.sh
+bash bin/create_certificates.sh cert $PWD/etc/certificates/openssl.cnf
+
+mkdir -p /etc/kolla/config/octavia
+sudo cp cert/{private/cakey.pem,ca_01.pem,client.pem} /etc/kolla/config/octavia/
+
+popd
 
 set +e
 
 sudo kolla-ansible -i all-in-one bootstrap-servers
 sudo kolla-ansible -i all-in-one prechecks
 sudo kolla-ansible -i all-in-one deploy || exit 1
-kolla-ansible post-deploy || exit 1
+sudo kolla-ansible post-deploy || exit 1
 
 sudo yum install -y centos-release-openstack-$KOLLA_OPENSTACK_RELEASE
 
@@ -118,18 +139,19 @@ set -e
 
 . /etc/kolla/admin-openrc.sh
 
-openstack flavor create --id 0 --ram 128 --vcpus 1 --disk 2 m1.nano
-openstack flavor create --id 1 --ram 256 --vcpus 1 --disk 5 m1.micro
-openstack flavor create --id 2 --ram 512 --vcpus 1 --disk 10 m1.tiny
-openstack flavor create --id 3 --ram 1024 --vcpus 1 --disk 20 m1.small
-openstack flavor create --id 4 --ram 2048 --vcpus 2 --disk 40 m1.medium
-openstack flavor create --id 5 --ram 4096 --vcpus 2 --disk 80 m1.large
-openstack flavor create --id 6 --ram 8192 --vcpus 4 --disk 160 m1.xlarge
-openstack flavor create --id 7 --ram 16384 --vcpus 6 --disk 320 m1.jumbo
+openstack flavor create --ram 64 --vcpus 1 --disk 1 d1.pico
+openstack flavor create --ram 128 --vcpus 1 --disk 2 d1.nano
+openstack flavor create --ram 256 --vcpus 1 --disk 5 d1.micro
+openstack flavor create --ram 512 --vcpus 1 --disk 10 d1.tiny
+openstack flavor create --ram 1024 --vcpus 1 --disk 20 d1.small
+openstack flavor create --ram 2048 --vcpus 2 --disk 40 d1.medium
+openstack flavor create --ram 4096 --vcpus 2 --disk 80 d1.large
+openstack flavor create --ram 8192 --vcpus 4 --disk 160 d1.xlarge
+openstack flavor create --ram 16384 --vcpus 6 --disk 320 d1.jumbo
 
 curl -LO https://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
 openstack image create \
-    --disk-format qcow2 --container-format bare --public \
+    --public --disk-format qcow2 --container-format bare \
     --file cirros-0.4.0-x86_64-disk.img \
     cirros-0.4.0
 rm -f cirros-0.4.0-x86_64-disk.img
@@ -144,5 +166,44 @@ openstack subnet create \
     --dns-nameserver 8.8.8.8 --dns-nameserver 8.8.4.4 \
     --network public \
     public
+
+openstack flavor create --private --ram 512 --vcpus 1 --disk 20 octavia
+openstack keypair create \
+    --os-username octavia \
+    --os-password "$(cat /etc/kolla/passwords.yml | grep octavia_keystone_password | awk '{ print $2 }')" \
+    octavia_ssh_key > octavia.pem
+openstack security group create octavia
+openstack security group rule create \
+    --protocol icmp \
+    octavia
+openstack security group rule create \
+    --protocol tcp --dst-port 5555 \
+    --egress \
+    octavia
+openstack security group rule create \
+    --protocol tcp --dst-port 9443 \
+    --ingress \
+    octavia
+
+pushd octavia/
+
+curl -LO http://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-centos-7.qcow2
+openstack image create \
+    --private --protected --disk-format qcow2 --container-format bare \
+    --tag amphora --file test-only-amphora-x64-haproxy-centos-7.qcow2 \
+    amphora
+rm -Rf test-only-amphora-x64-haproxy-centos-7.qcow2
+
+pushd
+
+cat >> /etc/kolla/globals.yml <<EOF
+
+octavia_loadbalancer_topology: "SINGLE"
+octavia_amp_boot_network_list: "$(openstack network show public -c id -f value)"
+octavia_amp_secgroup_list: "$(openstack security group show octavia -c id -f value)"
+octavia_amp_flavor_id: "$(openstack flavor show octavia -c id -f value)"
+EOF
+
+kolla-ansible -i all-in-one --tags octavia deploy
 
 echo -e "\nOS_PASSWORD (admin): $OS_PASSWORD"
