@@ -187,12 +187,12 @@ openstack security group rule create \
 
 pushd octavia/
 
-curl -LO http://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-centos-7.qcow2
+curl -LO http://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
 openstack image create \
     --private --protected --disk-format qcow2 --container-format bare \
-    --tag amphora --file test-only-amphora-x64-haproxy-centos-7.qcow2 \
+    --tag amphora --file test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2 \
     amphora
-rm -Rf test-only-amphora-x64-haproxy-centos-7.qcow2
+rm -Rf test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
 
 pushd
 
