@@ -34,6 +34,7 @@ Vagrant.configure('2') do |config|
     node.vm.network :forwarded_port, guest: 9696, host: 9696  # Neutron.
     node.vm.network :forwarded_port, guest: 8780, host: 8780  # Placement.
     node.vm.network :forwarded_port, guest: 8776, host: 8776  # Cinder.
+    node.vm.network :forwarded_port, guest: 9876, host: 9876  # Octavia.
   
     node.vm.provision :shell do |sh|
       sh.path = 'aio/unprivileged-main.sh'
