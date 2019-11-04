@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# TODO: Split the file?
-
-sudo fdisk /dev/sda <<EOF
+if ls /dev/sda &>/dev/null
+then
+    sudo fdisk /dev/sda <<EOF
 n
 p
 2
@@ -10,16 +10,30 @@ p
 
 w
 EOF
-sudo partprobe
+    sudo partprobe
+
+    cinder_pv=/dev/sda2
+else
+    cinder_pv=/dev/vdb
+fi
 
 set -e
 
+# Some Vagrant providers do not support auto_config.
+sudo -s <<EOF
+cat >> /etc/sysconfig/network-scripts/ifcfg-eth2 <<EOFF
+IPADDR=
+NETMASK=
+EOFF
+EOF
+sudo ifdown eth2
+sudo ifup eth2
+
 sudo yum install -y lvm2 epel-release
 
-sudo pvcreate /dev/sda2
-sudo vgcreate cinder-volumes /dev/sda2
+sudo pvcreate $cinder_pv
+sudo vgcreate cinder-volumes $cinder_pv
 
-# TODO: Create a bigger swapfile (or modify /swapfile)?
 sudo -s <<EOF
 cat > /usr/lib/sysctl.d/99-site.conf <<EOFF
 vm.swappiness=0
@@ -88,7 +102,7 @@ enable_octavia: "yes"
 enable_horizon_octavia: "{{ enable_octavia | bool }}"
 enable_barbican: "yes"
 
-nova_compute_virt_type: "qemu"
+nova_compute_virt_type: "$(grep -E 'vmx|svm' /proc/cpuinfo &>/dev/null && echo 'kvm' || echo 'qemu')"
 
 neutron_external_interface: "eth2"
 neutron_tenant_network_types: "vxlan"

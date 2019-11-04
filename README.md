@@ -8,6 +8,9 @@ Although Kolla-Ansible is mainly used for production deployment **this setup is 
 
 ```bash
 vagrant plugin install vagrant-disksize
+
+# If you want to use QEMU.
+vagrant plugin install vagrant-libvirt
 ```
 
 ## Setup
