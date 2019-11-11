@@ -15,6 +15,7 @@ Vagrant.configure('2') do |config|
   config.vm.define :router do |node|
     node.vm.network :private_network,
       ip: '10.100.0.2',
+      netmask: '255.255.0.0',
       virtualbox__intnet: PROVIDER_NETWORK_NAME
 
     node.vm.provision :shell do |sh|
@@ -35,12 +36,15 @@ Vagrant.configure('2') do |config|
   config.vm.define :aio do |node|
     node.vm.network :private_network,
       ip: '10.10.10.254',
+      netmask: '255.255.0.0',
       virtualbox__intnet: MANAGEMENT_NETWORK_NAME
     node.vm.network :private_network,
       ip: '10.100.0.9',
+      netmask: '255.255.0.0',
       virtualbox__intnet: PROVIDER_NETWORK_NAME
     node.vm.network :private_network,
       ip: '10.100.0.3',
+      netmask: '255.255.0.0',
       virtualbox__intnet: PROVIDER_NETWORK_NAME
   
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 80,   host: 80    # Horizon.
