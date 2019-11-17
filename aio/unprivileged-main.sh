@@ -44,12 +44,13 @@ sudo sysctl --system
 sudo yum makecache
 
 sudo yum install -y \
-    libffi-devel gcc openssl-devel git \
+    libffi-devel gcc openssl-devel git qemu-img \
     python-devel python-pip libselinux-python ansible
 
 sudo pip install -U pip
 
 sudo pip install --ignore-installed kolla-ansible==$KOLLA_VERSION
+sudo pip install diskimage-builder
 
 cd ~
 
@@ -134,6 +135,8 @@ bash bin/create_certificates.sh cert $PWD/etc/certificates/openssl.cnf
 mkdir -p /etc/kolla/config/octavia
 sudo cp cert/{private/cakey.pem,ca_01.pem,client.pem} /etc/kolla/config/octavia/
 
+sudo ./diskimage-create/diskimage-create.sh -i centos -s 5
+
 popd
 
 set +e
@@ -163,12 +166,10 @@ openstack flavor create --ram 4096 --vcpus 2 --disk 80 d1.large
 openstack flavor create --ram 8192 --vcpus 4 --disk 160 d1.xlarge
 openstack flavor create --ram 16384 --vcpus 6 --disk 320 d1.jumbo
 
-curl -LO https://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img
+curl -L https://download.cirros-cloud.net/0.4.0/cirros-0.4.0-x86_64-disk.img | \
 openstack image create \
     --public --disk-format qcow2 --container-format bare \
-    --file cirros-0.4.0-x86_64-disk.img \
     cirros-0.4.0
-rm -f cirros-0.4.0-x86_64-disk.img
 
 openstack network create \
     --share --external \
@@ -199,16 +200,11 @@ openstack security group rule create \
     --ingress \
     octavia
 
-pushd octavia/
-
-curl -LO http://tarballs.openstack.org/octavia/test-images/test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
 openstack image create \
     --private --protected --disk-format qcow2 --container-format bare \
-    --tag amphora --file test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2 \
+    --tag amphora --file octavia/amphora-x64-haproxy.qcow2 \
     amphora
-rm -Rf test-only-amphora-x64-haproxy-ubuntu-bionic.qcow2
-
-pushd
+sudo rm -f octavia/amphora-x64-haproxy.qcow2
 
 cat >> /etc/kolla/globals.yml <<EOF
 
