@@ -50,7 +50,6 @@ sudo yum install -y \
 sudo pip install -U pip
 
 sudo pip install --ignore-installed kolla-ansible==$KOLLA_VERSION
-sudo pip install diskimage-builder
 
 cd ~
 
@@ -135,7 +134,13 @@ bash bin/create_certificates.sh cert $PWD/etc/certificates/openssl.cnf
 mkdir -p /etc/kolla/config/octavia
 sudo cp cert/{private/cakey.pem,ca_01.pem,client.pem} /etc/kolla/config/octavia/
 
-sudo ./diskimage-create/diskimage-create.sh -i centos -s 5
+sudo pip install -r requirement.txt
+
+sudo -s <<EOF
+export DIB_REPOREF_amphora_agent=stable/$KOLLA_OPENSTACK_RELEASE
+
+./diskimage-create/diskimage-create.sh
+EOF
 
 popd
 
