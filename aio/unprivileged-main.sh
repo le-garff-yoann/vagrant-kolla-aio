@@ -44,7 +44,7 @@ sudo sysctl --system
 sudo yum makecache
 
 sudo yum install -y \
-    libffi-devel gcc openssl-devel git qemu-img \
+    libffi-devel gcc openssl-devel git qemu-img debootstrap \
     python-devel python-pip libselinux-python ansible
 
 sudo pip install -U pip
