@@ -120,6 +120,7 @@ tempest_flavor_ref_id:
 tempest_public_network_id:
 tempest_floating_network_name:
 EOF
+# TODO: https://docs.openstack.org/kolla-ansible/queens/reference/designate-guide.html
 
 git clone https://github.com/openstack/octavia.git \
     -b stable/$KOLLA_OPENSTACK_RELEASE
