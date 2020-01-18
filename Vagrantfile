@@ -59,13 +59,14 @@ Vagrant.configure('2') do |config|
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9876, host: 9876  # Octavia.
   
     node.vm.provision :shell do |sh|
-      sh.path = 'aio/unprivileged-main.sh'
+      sh.path = 'aio/main.sh'
       sh.env = {
         :KOLLA_OPENSTACK_RELEASE      => ENV['VAGRANT_KOLLA_AIO_OPENSTACK_RELEASE'] || 'stein',
         :KOLLA_EXTERNAL_FQDN          => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN'],
         :KOLLA_EXTERNAL_FQDN_CERT     => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT'],
         :KOLLA_LETSENCRYPT_EMAIL      => ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL'],
-        :KOLLA_VERSION                => ENV['VAGRANT_KOLLA_AIO_KOLLA_ANSIBLE_VERSION'] || '8.0.1'
+        :KOLLA_VERSION                => ENV['VAGRANT_KOLLA_AIO_KOLLA_ANSIBLE_VERSION'] || '8.0.1',
+        :KOLLA_USE_CEPH               => ENV['VAGRANT_KOLLA_AIO_USE_CEPH'] || ''
       }
   
       sh.privileged = false

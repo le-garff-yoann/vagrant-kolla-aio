@@ -29,10 +29,15 @@ EOF
 sudo ifdown eth2
 sudo ifup eth2
 
-sudo yum install -y lvm2 epel-release
+sudo yum install -y epel-release
 
-sudo pvcreate $cinder_pv
-sudo vgcreate cinder-volumes $cinder_pv
+if [[ -z "$KOLLA_USE_CEPH" ]]
+then
+    sudo yum install -y lvm2
+
+    sudo pvcreate $cinder_pv
+    sudo vgcreate cinder-volumes $cinder_pv
+fi
 
 sudo -s <<EOF
 cat > /usr/lib/sysctl.d/99-site.conf <<EOFF
@@ -109,8 +114,6 @@ neutron_tenant_network_types: "vxlan"
 enable_neutron_dvr: "yes"
 enable_neutron_provider_networks: "yes"
 
-enable_cinder_backend_lvm: "{{ enable_cinder | bool }}"
-
 glance_enable_rolling_upgrade: "no"
 
 ironic_dnsmasq_dhcp_range:
@@ -120,6 +123,27 @@ tempest_flavor_ref_id:
 tempest_public_network_id:
 tempest_floating_network_name:
 EOF
+
+if [[ -z "$KOLLA_USE_CEPH" ]]
+then
+    cat >> /etc/kolla/globals.yml <<EOF
+enable_cinder_backend_lvm: "{{ enable_cinder | bool }}"
+EOF
+else
+    sudo parted $cinder_pv -s -- mklabel gpt mkpart KOLLA_CEPH_OSD_BOOTSTRAP_BS 1 -1
+
+    cat >> /etc/kolla/globals.yml <<EOF
+enable_ceph: "{{ enable_cinder | bool }}"
+enable_ceph_rgw: "{{ enable_ceph | bool }}"
+EOF
+
+    mkdir -p /etc/kolla/config
+    cat > /etc/kolla/config/ceph.conf <<EOF
+[global]
+osd pool default size = 1
+osd pool default min size = 1
+EOF
+fi
 
 git clone https://github.com/openstack/octavia.git \
     -b stable/$KOLLA_OPENSTACK_RELEASE
