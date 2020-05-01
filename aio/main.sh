@@ -175,11 +175,10 @@ sudo kolla-ansible -i all-in-one prechecks
 sudo kolla-ansible -i all-in-one deploy || exit 1
 sudo kolla-ansible post-deploy || exit 1
 
-sudo yum install -y centos-release-openstack-$KOLLA_OPENSTACK_RELEASE
-
-sudo yum install -y \
-    openstack-selinux python-openstackclient \
-    python-octaviaclient python-barbicanclient
+sudo pip3 install \
+    git+https://github.com/openstack/python-openstackclient@stable/$KOLLA_OPENSTACK_RELEASE \
+    git+https://github.com/openstack/python-octaviaclient@stable/$KOLLA_OPENSTACK_RELEASE \
+    git+https://github.com/openstack/python-barbicanclient@stable/$KOLLA_OPENSTACK_RELEASE
 
 set -e
 
