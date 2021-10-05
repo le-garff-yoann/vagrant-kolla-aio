@@ -10,9 +10,9 @@ MANAGEMENT_NETWORK_NAME = 'aio_management_network'
 PROVIDER_NETWORK_NAME = 'aio_provider_network'
 
 Vagrant.configure('2') do |config|
-  config.vm.box = 'centos/7'
-
   config.vm.define :router do |node|
+    node.vm.box = 'centos/7'
+
     node.vm.network :private_network,
       ip: '10.100.0.2',
       netmask: '255.255.0.0',
@@ -34,6 +34,9 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.define :aio do |node|
+    node.vm.box = 'debian/bullseye64'
+    node.vm.box_version = '11.20210829.1'
+
     node.vm.network :private_network,
       ip: '10.10.10.254',
       netmask: '255.255.0.0',
@@ -41,7 +44,8 @@ Vagrant.configure('2') do |config|
     node.vm.network :private_network,
       ip: '10.100.0.9',
       netmask: '255.255.0.0',
-      virtualbox__intnet: PROVIDER_NETWORK_NAME
+      virtualbox__intnet: PROVIDER_NETWORK_NAME,
+      auto_config: false
     node.vm.network :private_network,
       ip: '10.100.0.3',
       netmask: '255.255.0.0',
@@ -56,17 +60,17 @@ Vagrant.configure('2') do |config|
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9696, host: 9696  # Neutron.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8780, host: 8780  # Placement.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8776, host: 8776  # Cinder.
-    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9876, host: 9876  # Octavia.
+
+    node.vm.disk :disk, name: 'cinder', size: '200GB', primary: false
   
     node.vm.provision :shell do |sh|
       sh.path = 'aio/main.sh'
       sh.env = {
-        :KOLLA_OPENSTACK_RELEASE      => ENV['VAGRANT_KOLLA_AIO_OPENSTACK_RELEASE'] || 'stein',
+        :KOLLA_OPENSTACK_RELEASE      => 'wallaby',
+        :KOLLA_VERSION                => '12.2.0',
         :KOLLA_EXTERNAL_FQDN          => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN'],
         :KOLLA_EXTERNAL_FQDN_CERT     => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT'],
-        :KOLLA_LETSENCRYPT_EMAIL      => ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL'],
-        :KOLLA_VERSION                => ENV['VAGRANT_KOLLA_AIO_KOLLA_ANSIBLE_VERSION'] || '8.0.1',
-        :KOLLA_USE_CEPH               => ENV['VAGRANT_KOLLA_AIO_USE_CEPH'] || ''
+        :KOLLA_LETSENCRYPT_EMAIL      => ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL']
       }
   
       sh.privileged = false
@@ -76,16 +80,19 @@ Vagrant.configure('2') do |config|
       lv.cpus = AIO_CPUS
       lv.memory = AIO_MEMORY
 
-      lv.storage :file, :size => '160GB'
-
-      lv.nested = true
+      lv.nested = ENV['VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT'] == 'true'
     end
-
-    node.disksize.size = '200GB'
 
     node.vm.provider :virtualbox do |vb|
       vb.cpus = AIO_CPUS
       vb.memory = AIO_MEMORY
+
+      vb.customize [
+        'modifyvm',
+        :id,
+        '--nested-hw-virt',
+        ENV['VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT'] == 'true' ? 'on' : 'off'
+      ]
     end
   end
 end

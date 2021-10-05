@@ -6,30 +6,23 @@ Although Kolla-Ansible is mainly used for production deployment **this setup is 
 
 ## Prerequisites
 
-```bash
-vagrant plugin install vagrant-disksize
-
-# If you want to use QEMU.
-vagrant plugin install vagrant-libvirt
-```
+Your Vagrant setup must support the [`disks`](https://www.vagrantup.com/docs/experimental#disks) feature.
 
 ## Setup
 
 ```bash
 VAGRANT_KOLLA_AIO_EXTERNAL_FQDN=mydomain.io \
-    vagrant up
+    sh vagrant.sh up
 ```
 
 | ENV | Mandatory? | Default value | Description |
 |-|-|-|-|
-| `VAGRANT_KOLLA_AIO_OPENSTACK_RELEASE` | ☓ | `stein` | Version of OpenStack to install. |
 | `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN` | ✓ | None | URL through which OpenStack will be accessed from outside. |
 | `VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL` | ☓ | None | Enables the external TLS termination. It must be completed with the email address associated with your Let's Encrypt account. |
 | `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT` | ☓ | None | Enables the external TLS termination. It must be completed with a private key and a fullchain certificate (PEM format). |
-| `VAGRANT_KOLLA_AIO_KOLLA_ANSIBLE_VERSION` | ☓ | `8.0.1` | Version of [kolla-ansible](https://pypi.org/project/kolla-ansible/) to install. |
-| `VAGRANT_KOLLA_AIO_CPUS` | ☓ | `4` | CPUs |
-| `VAGRANT_KOLLA_AIO_MEMORY` | ☓ | `12288` (mb) | RAM |
-| `VAGRANT_KOLLA_AIO_USE_CEPH` | ☓ | None | Enables Ceph as the storage and backup backend for Cinder (LVM2 by default). `VAGRANT_KOLLA_AIO_MEMORY`'s recommanded value in this case is over `17000`. |
+| `VAGRANT_KOLLA_AIO_CPUS` | ✓ | `4` | CPUs |
+| `VAGRANT_KOLLA_AIO_MEMORY` | ✓ | `12288` (mb) | RAM |
+| `VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT` | ✓ | `false` | Enables nested virtualization on All-In-One OpenStack node. |
 
 The *admin* password will be displayed out at the end of the setup.
 
@@ -37,12 +30,12 @@ The *admin* password will be displayed out at the end of the setup.
 
 ### Horizon
 
-Connect to it through `http://$VAGRANT_KOLLA_AIO_KOLLA_EXTERNAL_FQDN`.
+Connect to it through `http://$VAGRANT_KOLLA_AIO_EXTERNAL_FQDN`.
 
 ### CLI
 
 ```bash
-vagrant ssh
+sh vagrant.sh ssh
 
 . /etc/kolla/admin-openrc.sh
 

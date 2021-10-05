@@ -1,2 +1,2 @@
 .vagrant/
-setup.sh
+.defaults.env
