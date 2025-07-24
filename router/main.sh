@@ -2,6 +2,12 @@
 
 set -eo pipefail
 
+# /etc/localtime is missing on "generic/rocky9:4.3.12".
+rm -rf /etc/localtime
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+timedatectl set-timezone UTC
+timedatectl set-local-rtc 0
+
 cat > /usr/lib/sysctl.d/99-site.conf <<EOF
 net.ipv4.ip_forward=1
 EOF
@@ -14,7 +20,7 @@ iptables -A FORWARD -o eth1 -j ACCEPT
 
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
-yum install -y iptables-services
+dnf install -y iptables-services
 
 iptables-save > /etc/sysconfig/iptables
 

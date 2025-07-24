@@ -8,6 +8,7 @@ ROUTER_CPU = 1
 ROUTER_MEMORY = 256
 AIO_CPUS = ENV['VAGRANT_KOLLA_AIO_CPUS'] || 4
 AIO_MEMORY = ENV['VAGRANT_KOLLA_AIO_MEMORY'] || 12_288
+AIO_CINDER_VOLUME_SIZE = '200GB'
 
 MANAGEMENT_NETWORK_NAME = 'aio_management_network'
 PROVIDER_NETWORK_NAME = 'aio_provider_network'
@@ -16,7 +17,8 @@ Vagrant.configure('2') do |config|
   config.vm.synced_folder '.', '/vagrant', disabled: true
 
   config.vm.define :router do |node|
-    node.vm.box = 'centos/7'
+    node.vm.box = 'generic/rocky9'
+    node.vm.box_version = '4.3.12'
 
     node.vm.network :private_network,
                     ip: '10.100.0.2',
@@ -39,8 +41,8 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.define :aio do |node|
-    node.vm.box = 'debian/bullseye64'
-    node.vm.box_version = '11.20210829.1'
+    node.vm.box = 'generic/rocky9'
+    node.vm.box_version = '4.3.12'
 
     node.vm.network :private_network,
                     ip: '10.10.10.254',
@@ -58,6 +60,7 @@ Vagrant.configure('2') do |config|
 
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 80,   host: 80    # Horizon.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 443,  host: 443   # Horizon.
+    node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 9999, host: 9999 # Skyline.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8774, host: 8774  # Nova.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 6080, host: 6080  # Nova (noVNC).
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 5000, host: 5000  # Keystone.
@@ -66,13 +69,12 @@ Vagrant.configure('2') do |config|
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8780, host: 8780  # Placement.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8776, host: 8776  # Cinder.
 
-    node.vm.disk :disk, name: 'cinder', size: '200GB', primary: false
+    node.vm.disk :disk, name: 'cinder', size: AIO_CINDER_VOLUME_SIZE, primary: false
 
     node.vm.provision :shell do |sh|
       sh.path = 'aio/main.sh'
       sh.env = {
-        KOLLA_OPENSTACK_RELEASE: 'wallaby',
-        KOLLA_VERSION: '12.2.0',
+        KOLLA_OPENSTACK_RELEASE: '2025.1',
         KOLLA_EXTERNAL_FQDN: ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN'],
         KOLLA_EXTERNAL_FQDN_CERT: ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT'],
         KOLLA_LETSENCRYPT_EMAIL: ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL']
@@ -84,6 +86,8 @@ Vagrant.configure('2') do |config|
     node.vm.provider :libvirt do |lv|
       lv.cpus = AIO_CPUS
       lv.memory = AIO_MEMORY
+
+      lv.storage :file, size: AIO_CINDER_VOLUME_SIZE
 
       lv.nested = ENV['VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT'] == 'true'
     end
