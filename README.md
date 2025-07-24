@@ -11,6 +11,10 @@ Your Vagrant setup must support the [`disks`](https://www.vagrantup.com/docs/exp
 ## Setup
 
 ```bash
+# You can also use the libvirt provider by setting:
+# VAGRANT_DEFAULT_PROVIDER=libvirt
+# export VAGRANT_DEFAULT_PROVIDER
+
 VAGRANT_KOLLA_AIO_EXTERNAL_FQDN=mydomain.io \
     sh vagrant.sh up
 ```
