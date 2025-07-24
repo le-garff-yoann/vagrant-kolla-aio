@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
 
 if [[ -e /dev/sdb ]]
 then
@@ -29,7 +29,8 @@ sudo pip3 install virtualenv certbot
 
 cd ~
 
-python3 -m virtualenv venv -p $(which python3)
+python3 -m virtualenv venv -p "$(which python3)"
+# shellcheck disable=SC1091
 . venv/bin/activate
 
 pip install ansible==2.10.7 kolla-ansible=="$KOLLA_VERSION"
@@ -117,6 +118,7 @@ EOF
 sudo pip3 install \
     "git+https://github.com/openstack/python-openstackclient@stable/$KOLLA_OPENSTACK_RELEASE"
 
+# shellcheck disable=SC1091
 . /etc/kolla/admin-openrc.sh
 
 openstack flavor create --ram 64 --vcpus 1 --disk 1 d1.pico

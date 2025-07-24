@@ -15,16 +15,16 @@ VAGRANT_KOLLA_AIO_EXTERNAL_FQDN=mydomain.io \
     sh vagrant.sh up
 ```
 
-| ENV | Mandatory? | Default value | Description |
-|-|-|-|-|
-| `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN` | ✓ | None | URL through which OpenStack will be accessed from outside. |
-| `VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL` | ☓ | None | Enables the external TLS termination. It must be completed with the email address associated with your Let's Encrypt account. |
-| `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT` | ☓ | None | Enables the external TLS termination. It must be completed with a private key and a fullchain certificate (PEM format). |
-| `VAGRANT_KOLLA_AIO_CPUS` | ✓ | `4` | CPUs |
-| `VAGRANT_KOLLA_AIO_MEMORY` | ✓ | `12288` (mb) | RAM |
-| `VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT` | ✓ | `false` | Enables nested virtualization on All-In-One OpenStack node. |
+| ENV                                    | Mandatory? | Default value | Description                                                                                                                   |
+| -------------------------------------- | ---------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN`      | ✓          | None          | URL through which OpenStack will be accessed from outside.                                                                    |
+| `VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL`  | ☓          | None          | Enables the external TLS termination. It must be completed with the email address associated with your Let's Encrypt account. |
+| `VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT` | ☓          | None          | Enables the external TLS termination. It must be completed with a private key and a fullchain certificate (PEM format).       |
+| `VAGRANT_KOLLA_AIO_CPUS`               | ✓          | `4`           | CPUs                                                                                                                          |
+| `VAGRANT_KOLLA_AIO_MEMORY`             | ✓          | `12288` (mb)  | RAM                                                                                                                           |
+| `VAGRANT_KOLLA_AIO_ENABLE_NESTED_VIRT` | ✓          | `false`       | Enables nested virtualization on All-In-One OpenStack node.                                                                   |
 
-The *admin* password will be displayed out at the end of the setup.
+The _admin_ password will be displayed out at the end of the setup.
 
 ## OpenStack
 

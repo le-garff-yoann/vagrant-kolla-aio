@@ -1,10 +1,13 @@
+# rubocop:disable Metrics/BlockLength
+# frozen_string_literal: true
+
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
 ROUTER_CPU = 1
 ROUTER_MEMORY = 256
 AIO_CPUS = ENV['VAGRANT_KOLLA_AIO_CPUS'] || 4
-AIO_MEMORY = ENV['VAGRANT_KOLLA_AIO_MEMORY'] || 12288
+AIO_MEMORY = ENV['VAGRANT_KOLLA_AIO_MEMORY'] || 12_288
 
 MANAGEMENT_NETWORK_NAME = 'aio_management_network'
 PROVIDER_NETWORK_NAME = 'aio_provider_network'
@@ -14,15 +17,15 @@ Vagrant.configure('2') do |config|
     node.vm.box = 'centos/7'
 
     node.vm.network :private_network,
-      ip: '10.100.0.2',
-      netmask: '255.255.0.0',
-      virtualbox__intnet: PROVIDER_NETWORK_NAME
+                    ip: '10.100.0.2',
+                    netmask: '255.255.0.0',
+                    virtualbox__intnet: PROVIDER_NETWORK_NAME
 
     node.vm.provision :shell do |sh|
       sh.path = 'router/main.sh'
     end
 
-    node.vm.provider :libvirt do |lv|     
+    node.vm.provider :libvirt do |lv|
       lv.cpus = ROUTER_CPU
       lv.memory = ROUTER_MEMORY
     end
@@ -38,19 +41,19 @@ Vagrant.configure('2') do |config|
     node.vm.box_version = '11.20210829.1'
 
     node.vm.network :private_network,
-      ip: '10.10.10.254',
-      netmask: '255.255.0.0',
-      virtualbox__intnet: MANAGEMENT_NETWORK_NAME
+                    ip: '10.10.10.254',
+                    netmask: '255.255.0.0',
+                    virtualbox__intnet: MANAGEMENT_NETWORK_NAME
     node.vm.network :private_network,
-      ip: '10.100.0.9',
-      netmask: '255.255.0.0',
-      virtualbox__intnet: PROVIDER_NETWORK_NAME,
-      auto_config: false
+                    ip: '10.100.0.9',
+                    netmask: '255.255.0.0',
+                    virtualbox__intnet: PROVIDER_NETWORK_NAME,
+                    auto_config: false
     node.vm.network :private_network,
-      ip: '10.100.0.3',
-      netmask: '255.255.0.0',
-      virtualbox__intnet: PROVIDER_NETWORK_NAME
-  
+                    ip: '10.100.0.3',
+                    netmask: '255.255.0.0',
+                    virtualbox__intnet: PROVIDER_NETWORK_NAME
+
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 80,   host: 80    # Horizon.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 443,  host: 443   # Horizon.
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8774, host: 8774  # Nova.
@@ -62,17 +65,17 @@ Vagrant.configure('2') do |config|
     node.vm.network :forwarded_port, host_ip: '0.0.0.0', guest: 8776, host: 8776  # Cinder.
 
     node.vm.disk :disk, name: 'cinder', size: '200GB', primary: false
-  
+
     node.vm.provision :shell do |sh|
       sh.path = 'aio/main.sh'
       sh.env = {
-        :KOLLA_OPENSTACK_RELEASE      => 'wallaby',
-        :KOLLA_VERSION                => '12.2.0',
-        :KOLLA_EXTERNAL_FQDN          => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN'],
-        :KOLLA_EXTERNAL_FQDN_CERT     => ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT'],
-        :KOLLA_LETSENCRYPT_EMAIL      => ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL']
+        KOLLA_OPENSTACK_RELEASE: 'wallaby',
+        KOLLA_VERSION: '12.2.0',
+        KOLLA_EXTERNAL_FQDN: ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN'],
+        KOLLA_EXTERNAL_FQDN_CERT: ENV['VAGRANT_KOLLA_AIO_EXTERNAL_FQDN_CERT'],
+        KOLLA_LETSENCRYPT_EMAIL: ENV['VAGRANT_KOLLA_AIO_LETSENCRYPT_EMAIL']
       }
-  
+
       sh.privileged = false
     end
 
@@ -96,3 +99,5 @@ Vagrant.configure('2') do |config|
     end
   end
 end
+
+# rubocop:enable Metrics/BlockLength
