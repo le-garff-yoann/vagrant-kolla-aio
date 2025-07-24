@@ -13,6 +13,8 @@ MANAGEMENT_NETWORK_NAME = 'aio_management_network'
 PROVIDER_NETWORK_NAME = 'aio_provider_network'
 
 Vagrant.configure('2') do |config|
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
   config.vm.define :router do |node|
     node.vm.box = 'centos/7'
 
